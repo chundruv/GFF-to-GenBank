@@ -13,7 +13,6 @@ import sys
 import os
 
 from Bio import SeqIO
-from Bio.Alphabet import generic_dna
 from Bio import Seq
 from Bio import SeqFeature
 
@@ -21,7 +20,7 @@ from BCBio import GFF
 
 def main(gff_file, fasta_file):
     out_file = "%s.gb" % os.path.splitext(gff_file)[0]
-    fasta_input = SeqIO.to_dict(SeqIO.parse(fasta_file, "fasta", generic_dna))
+    fasta_input = SeqIO.to_dict(SeqIO.parse(fasta_file, "fasta"))
     gff_iter = GFF.parse(gff_file, fasta_input)
     SeqIO.write(_check_gff(_fix_ncbi_id(_extract_regions(gff_iter))), out_file, "genbank")
 
@@ -48,7 +47,6 @@ def _check_gff(gff_iterator):
         if isinstance(rec.seq, Seq.UnknownSeq):
             print("Warning: FASTA sequence not found for '%s' in GFF file" % (
                     rec.id))
-            rec.seq.alphabet = generic_dna
         yield _flatten_features(rec)
 
 def _extract_regions(gff_iterator):
@@ -64,6 +62,7 @@ def _extract_regions(gff_iterator):
             for j in range(len(rec.features[i].sub_features)):
                 rec.features[i].sub_features[j].location=SeqFeature.FeatureLocation(SeqFeature.ExactPosition(rec.features[i].sub_features[j].location.start-loc),SeqFeature.ExactPosition(rec.features[i].sub_features[j].location.end-loc), strand=rec.features[i].sub_features[j].strand)
         rec.seq=rec.seq[loc:endloc]
+        rec.annotations["molecule_type"] = "DNA"
         yield rec
 
 def _flatten_features(rec):
